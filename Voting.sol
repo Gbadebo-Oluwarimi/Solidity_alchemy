@@ -7,6 +7,7 @@ contract Voting {
         bytes data;
         uint yesCount;
         uint noCount;
+        bool executed;
     }
     event ProposalCreated(uint proposalId);
     event VoteCast (uint proposalId, address _voteAddress);
@@ -23,7 +24,7 @@ contract Voting {
         // check if address is in the address array 
         bool _isaddr = checkAddress(msg.sender);
         if(_isaddr){
-             Proposal memory _proposal = Proposal(_targetAddr,_data,0,0);
+             Proposal memory _proposal = Proposal(_targetAddr,_data,0,0, false);
             proposals.push(_proposal);
             emit ProposalCreated(proposals.length - 1);
         }
@@ -44,11 +45,16 @@ contract Voting {
         }
         else{
          _isSuccess.noCount += 1;
-       
         }
         // after running the flow above it then updates the user alreadyVoted to true
         emit VoteCast(proposalId, msg.sender);
         alreadyVoted[msg.sender] = true;
+        //check if the proposal yes is == 10 and the excute the proposal 
+         if (_isSuccess.yesCount == 10 && !_isSuccess.executed) {
+                _isSuccess.executed = true;
+                (bool success, ) = _isSuccess.target.call(_isSuccess.data);
+                require(success, "Proposal execution failed");
+            }
        }
        // if a user has alredy voted we call the change vote function 
        else{
